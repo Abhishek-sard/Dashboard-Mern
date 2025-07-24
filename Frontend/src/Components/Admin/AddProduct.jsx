@@ -8,9 +8,11 @@ import {
   InputLabel,
   Select,
   MenuItem,
-  FormHelperText
+  Snackbar,
+  Alert
 } from '@mui/material';
 import axios from 'axios';
+import { data } from 'react-router-dom';
 
 const AddProduct = () => {
   const [formData, setFormData] = useState({
@@ -22,44 +24,47 @@ const AddProduct = () => {
   });
 
   const [error, setError] = useState('');
+  const [snackbar, setSnackbar] = useState({
+    open: false,
+    message: '',
+    severity: 'success'
+  });
 
-  const categories = ['Electronics', 'Clothing', 'Books', 'Home', 'Other'];
+  const Categories = ['Electronics', 'Clothing', 'Books', 'Home', 'Other'];
 
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData({ ...formData, [name]: value });
+  const handleCloseSnackbar = () => {
+    setSnackbar({...snackbar, open: false});
   };
 
-  const handleImageChange = (e) => {
-    setFormData({ ...formData, image: e.target.files[0] });
-  };
+  // ... rest of your existing code ...
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
 
-    // Basic validation
     if (!formData.image) {
-      setError('Please select an image');
+      setSnackbar({
+        open: true,
+        message: 'Please select an image',
+        severity: 'error'
+      });
       return;
     }
 
-    const data = new FormData();
-    data.append('name', formData.name);
-    data.append('price', formData.price);
-    data.append('description', formData.description);
-    data.append('category', formData.category);
-    data.append('image', formData.image);
-
     try {
-      const response = await axios.post('http://localhost:5000/api/products', data, {
+      const response = await axios.post('http://localhost:5000/api/products',data, {
         headers: {
           'Content-Type': 'multipart/form-data'
         }
       });
       
-      alert(`Product "${response.data.name}" added successfully!`);
-      // Reset form after successful submission
+      setSnackbar({
+        open: true,
+        message: `Product "${response.data.name}" added successfully!`,
+        severity: 'success'
+      });
+
+      // Reset form
       setFormData({
         name: '',
         price: '',
@@ -68,97 +73,33 @@ const AddProduct = () => {
         image: null,
       });
     } catch (err) {
-      setError(err.response?.data?.message || 'Error adding product');
+      const errorMsg = err.response?.data?.message || 'Error adding product';
+      setSnackbar({
+        open: true,
+        message: errorMsg,
+        severity: 'error'
+      });
+      setError(errorMsg);
     }
   };
 
   return (
     <Box component="form" onSubmit={handleSubmit} sx={{ mb: 4 }}>
-      <Typography variant="h6" gutterBottom>Add New Product</Typography>
-      
-      {error && (
-        <Typography color="error" sx={{ mb: 2 }}>
-          {error}
-        </Typography>
-      )}
+      {/* Your existing form JSX */}
 
-      <TextField
-        label="Product Name"
-        name="name"
-        value={formData.name}
-        onChange={handleChange}
-        fullWidth
-        margin="normal"
-        required
-      />
-
-      <TextField
-        label="Price"
-        name="price"
-        type="number"
-        value={formData.price}
-        onChange={handleChange}
-        fullWidth
-        margin="normal"
-        required
-        inputProps={{ step: "0.01" }}
-      />
-
-      <TextField
-        label="Description"
-        name="description"
-        value={formData.description}
-        onChange={handleChange}
-        fullWidth
-        margin="normal"
-        required
-        multiline
-        rows={4}
-      />
-
-      <FormControl fullWidth margin="normal" required>
-        <InputLabel>Category</InputLabel>
-        <Select
-          name="category"
-          value={formData.category}
-          label="Category"
-          onChange={handleChange}
-        >
-          {categories.map((cat) => (
-            <MenuItem key={cat} value={cat}>
-              {cat}
-            </MenuItem>
-          ))}
-        </Select>
-      </FormControl>
-
-      <Box sx={{ mt: 2, mb: 2 }}>
-        <Button variant="contained" component="label">
-          Upload Image
-          <input 
-            type="file" 
-            hidden 
-            onChange={handleImageChange} 
-            accept="image/*"
-            required
-          />
-        </Button>
-        {formData.image && (
-          <Typography variant="body2" sx={{ mt: 1 }}>
-            Selected: {formData.image.name}
-          </Typography>
-        )}
-      </Box>
-
-      <Button 
-        type="submit" 
-        variant="contained" 
-        color="white"
-        fullWidth
-        sx={{ mt: 3 }}
+      <Snackbar
+        open={snackbar.open}
+        autoHideDuration={6000}
+        onClose={handleCloseSnackbar}
       >
-        Add Product
-      </Button>
+        <Alert 
+          onClose={handleCloseSnackbar} 
+          severity={snackbar.severity}
+          sx={{ width: '100%' }}
+        >
+          {snackbar.message}
+        </Alert>
+      </Snackbar>
     </Box>
   );
 };

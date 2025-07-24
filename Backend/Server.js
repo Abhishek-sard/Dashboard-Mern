@@ -19,6 +19,10 @@ app.get('/', (req, res) => {
   res.send('Backend is running!');
 });
 
+// Add this after middleware setup
+const productRoutes = require('./routes/productRoutes');
+app.use('/api/products', productRoutes);
+
 // Start server
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
